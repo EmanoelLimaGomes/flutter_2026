@@ -1,0 +1,112 @@
+@startuml Portal_Produtos_UML
+
+' Configurações Visuais
+skinparam style strictuml
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam class {
+    BackgroundColor white
+    BorderColor #8B1D33
+    ArrowColor #8B1D33
+}
+
+title Diagrama de Classes - Portal de Produtos (Faculdade Donaduzzi)
+
+package "Domain Layer" <<Rectangle>> #FDE8EB {
+    class Product {
+        + int? id
+        + String title
+        + double price
+        + String image
+        + String? description
+        + String? category
+        + bool favorite
+    }
+
+    interface ProductRepository {
+        + Future<List<Product>> getProducts()
+        + Future<void> createProduct(Product product)
+        + Future<void> updateProduct(Product product)
+        + Future<void> deleteProduct(int id)
+    }
+}
+
+package "Data Layer" <<Rectangle>> #F8F9FA {
+    class ProductModel {
+        + Map<String, dynamic> toJson()
+        + {static} ProductModel fromJson(Map<String, dynamic> json)
+    }
+
+    class ProductRemoteDataSource {
+        - String _baseUrl
+        + Future<List<ProductModel>> getProducts()
+        + Future<void> createProduct(ProductModel product)
+        + Future<void> updateProduct(ProductModel product)
+        + Future<void> deleteProduct(int id)
+    }
+
+    class ProductRepositoryImpl {
+        - List<Product>? cache
+        + Future<List<Product>> getProducts()
+        + Future<void> createProduct(Product product)
+        + Future<void> updateProduct(Product product)
+        + Future<void> deleteProduct(int id)
+    }
+}
+
+package "Presentation Layer" <<Rectangle>> #E9ECEF {
+    class ProductViewModel {
+        + List<Product> products
+        + List<Product> cart
+        + Status status
+        + String errorMessage
+        + double cartTotal
+        + Future<void> fetchProducts()
+        + Future<void> addProduct(Product product)
+        + Future<void> updateProduct(Product product)
+        + Future<void> deleteProduct(int id)
+        + void toggleFavorite(Product product)
+        + void toggleCart(Product product)
+        + bool isInCart(Product product)
+    }
+
+    enum Status {
+        loading
+        success
+        error
+    }
+
+    class InitialPage <<Widget>> {
+        + Widget build(BuildContext context)
+    }
+
+    class ProductPage <<Widget>> {
+        + Widget build(BuildContext context)
+        - Widget _buildBody(BuildContext context, ProductViewModel vm)
+        - Widget _buildProductCard(BuildContext context, ProductViewModel vm, Product p)
+        - void _showProductDialog(BuildContext context, ProductViewModel vm, [Product? product])
+    }
+
+    class ProductDetailPage <<Widget>> {
+        + Product product
+        + Widget build(BuildContext context)
+    }
+}
+
+' Relacionamentos
+ProductModel --|> Product : extends
+ProductRepositoryImpl ..|> ProductRepository : implements
+ProductRepositoryImpl --> ProductRemoteDataSource : uses
+ProductRepositoryImpl o-- Product : caches
+
+ProductViewModel --> ProductRepository : uses
+ProductViewModel o-- Product : manages
+ProductViewModel ..> Status : uses
+
+InitialPage ..> ProductPage : navigates to
+ProductPage ..> ProductViewModel : uses (Provider)
+ProductPage ..> ProductDetailPage : navigates to
+ProductDetailPage --> Product : displays
+
+@enduml
