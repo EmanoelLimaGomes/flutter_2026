@@ -1,6 +1,7 @@
 import '../../domain/entities/product.dart';
 import '../../domain/repositories/product_repository.dart';
 import '../datasources/product_remote_datasource.dart';
+import '../models/product_model.dart';
 
 class ProductRepositoryImpl implements ProductRepository {
   final ProductRemoteDataSource datasource;
@@ -22,5 +23,34 @@ class ProductRepositoryImpl implements ProductRepository {
         throw Exception("Erro e sem cache disponível");
       }
     }
+  }
+
+  @override
+  Future<void> createProduct(Product product) async {
+    final model = ProductModel(
+      title: product.title,
+      price: product.price,
+      image: product.image,
+    );
+    await datasource.createProduct(model);
+    cache = null; // Invalidate cache
+  }
+
+  @override
+  Future<void> updateProduct(Product product) async {
+    final model = ProductModel(
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      image: product.image,
+    );
+    await datasource.updateProduct(model);
+    cache = null; // Invalidate cache
+  }
+
+  @override
+  Future<void> deleteProduct(int id) async {
+    await datasource.deleteProduct(id);
+    cache = null; // Invalidate cache
   }
 }
