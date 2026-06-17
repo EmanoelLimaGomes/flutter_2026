@@ -3,13 +3,14 @@ import 'package:http/http.dart' as http;
 import '../models/product_model.dart';
 
 class ProductRemoteDataSource {
-  final String _baseUrl = 'https://fakestoreapi.com/products';
+  final String _baseUrl = 'https://dummyjson.com/products';
 
   Future<List<ProductModel>> getProducts() async {
     final response = await http.get(Uri.parse(_baseUrl));
 
     if (response.statusCode == 200) {
-      final List data = json.decode(response.body);
+      final Map<String, dynamic> jsonData = json.decode(response.body);
+      final List data = jsonData['products'];
       return data.map((e) => ProductModel.fromJson(e)).toList();
     } else {
       throw Exception("Erro ao buscar produtos");
@@ -19,6 +20,7 @@ class ProductRemoteDataSource {
   Future<void> createProduct(ProductModel product) async {
     final response = await http.post(
       Uri.parse(_baseUrl),
+      headers: {'Content-Type': 'application/json'},
       body: json.encode(product.toJson()),
     );
 
@@ -30,6 +32,7 @@ class ProductRemoteDataSource {
   Future<void> updateProduct(ProductModel product) async {
     final response = await http.put(
       Uri.parse('$_baseUrl/${product.id}'),
+      headers: {'Content-Type': 'application/json'},
       body: json.encode(product.toJson()),
     );
 
@@ -39,9 +42,7 @@ class ProductRemoteDataSource {
   }
 
   Future<void> deleteProduct(int id) async {
-    final response = await http.delete(
-      Uri.parse('$_baseUrl/$id'),
-    );
+    final response = await http.delete(Uri.parse('$_baseUrl/$id'));
 
     if (response.statusCode != 200) {
       throw Exception("Erro ao deletar produto");

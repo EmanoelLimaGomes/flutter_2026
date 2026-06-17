@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../viewmodels/product_viewmodel.dart';
+import '../viewmodels/auth_viewmodel.dart';
 import '../../domain/entities/product.dart';
 import '../../data/datasources/product_remote_datasource.dart';
 import '../../data/repositories/product_repository_impl.dart';
@@ -79,6 +80,9 @@ class ProductPage extends StatelessWidget {
   Widget _buildMenuDrawer(BuildContext context, ProductViewModel vm) {
     double width = MediaQuery.of(context).size.width;
     bool isPC = width > 700;
+    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+    final user = authViewModel.currentUser;
+
     return Drawer(
       backgroundColor: Colors.white,
       width: isPC ? width / 4 : width * 0.85,
@@ -86,18 +90,55 @@ class ProductPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.all(24.0),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Manel Store',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
                   ),
-                  Text(
-                    'Menu de Funções',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: const Color(0xFF8B1D33),
+                        child: Text(
+                          user?.firstName?.isNotEmpty == true
+                              ? user!.firstName![0].toUpperCase()
+                              : 'U',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user?.fullName ?? 'Usuário',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            if (user?.email != null)
+                              Text(
+                                user!.email!,
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -152,12 +193,40 @@ class ProductPage extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Em breve!')),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('Em breve!')));
               },
             ),
             const Spacer(),
+            const Divider(height: 1),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.logout_rounded,
+                  color: Colors.red,
+                  size: 20,
+                ),
+              ),
+              title: const Text(
+                'Sair',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+              subtitle: const Text('Encerrar sessão'),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () async {
+                Navigator.pop(context);
+                await authViewModel.logout();
+              },
+            ),
             const Padding(
               padding: EdgeInsets.all(24.0),
               child: Text(
@@ -223,8 +292,15 @@ class ProductPage extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Image.network(
-                                p.image,
+                                p.image ?? '',
                                 fit: BoxFit.contain,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.image_not_supported,
+                                    size: 40,
+                                    color: Colors.grey,
+                                  );
+                                },
                               ),
                             ),
                             title: Text(
@@ -295,8 +371,15 @@ class ProductPage extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Image.network(
-                                  p.image,
+                                  p.image ?? '',
                                   fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Icon(
+                                      Icons.image_not_supported,
+                                      size: 40,
+                                      color: Colors.grey,
+                                    );
+                                  },
                                 ),
                               ),
                               const SizedBox(width: 16),
@@ -572,7 +655,17 @@ class _ProductCardState extends State<ProductCard> {
                       Center(
                         child: Hero(
                           tag: 'product_image_${p.id}',
-                          child: Image.network(p.image, fit: BoxFit.contain),
+                          child: Image.network(
+                            p.image ?? '',
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.image_not_supported,
+                                size: 60,
+                                color: Colors.grey,
+                              );
+                            },
+                          ),
                         ),
                       ),
                       Positioned(
@@ -665,7 +758,9 @@ class _ProductCardState extends State<ProductCard> {
                         vm.removeFromCart(p);
                       } else {
                         vm.addToCart(p, quantity);
-                        setState(() => quantity = 1); // Reset quantity after adding
+                        setState(
+                          () => quantity = 1,
+                        ); // Reset quantity after adding
                       }
                     },
                     style: ElevatedButton.styleFrom(

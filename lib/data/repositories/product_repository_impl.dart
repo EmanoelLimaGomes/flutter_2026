@@ -31,6 +31,7 @@ class ProductRepositoryImpl implements ProductRepository {
       title: product.title,
       price: product.price,
       image: product.image,
+      images: product.images,
     );
     await datasource.createProduct(model);
     cache = null; // Invalidate cache
@@ -43,6 +44,7 @@ class ProductRepositoryImpl implements ProductRepository {
       title: product.title,
       price: product.price,
       image: product.image,
+      images: product.images,
     );
     await datasource.updateProduct(model);
     cache = null; // Invalidate cache

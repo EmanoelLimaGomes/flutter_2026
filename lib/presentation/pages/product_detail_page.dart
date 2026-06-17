@@ -44,12 +44,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     color: Colors.white,
                     padding: const EdgeInsets.all(40),
                     child: Hero(
-                      tag: 'product_image_${widget.product.id}',
-                      child: Image.network(
-                        widget.product.image,
-                        fit: BoxFit.contain,
-                      ),
+                    tag: 'product_image_${widget.product.id}',
+                    child: Image.network(
+                      widget.product.image ?? '',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(Icons.image_not_supported, size: 80, color: Colors.grey);
+                      },
                     ),
+                  ),
                   ),
                 ),
               ),
